@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>lines</title>
+    </head>
+    <body>
+        <input type="file" id="file-input" accept="image/*" />
+        <canvas id="lineart" width="5" height="5"></canvas>
+        <script>
+            const canvas = document.getElementById("lineart");
+            const ctx = canvas.getContext("2d");
+            let rep = 6;
+            let points = [];
+
+            document.getElementById("file-input").addEventListener("change", function (event) {
+                const file = event.target.files[0];
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const img = new Image();
+                    img.onload = function () {
+                        canvas.width = img.width * 7;
+                        canvas.height = img.height * 7;
+
+                        let image = ctx.drawImage(img, 0, 0);
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const pixelData = imageData.data;
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                        for (let i = 0; i < pixelData.length; i += 4) {
+                            const r = pixelData[i];
+                            const g = pixelData[i + 1];
+                            const b = pixelData[i + 2];
+                            const a = pixelData[i + 3];
+
+                            const x = (i / 4) % canvas.width;
+                            const y = Math.floor(i / 4 / canvas.width);
+                            if (r + g + b === 0) continue;
+                            for (let xxx = 0; xxx < rep; xxx++) {
+                                points.push({
+                                    colour: `rgba(${r}, ${g}, ${b}, 0.01)`,
+                                    x: x * 7,
+                                    y: y * 7,
+                                });
+                            }
+                        }
+                        ctx.scale(0.4, 0.4);
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        for (let i = 0; i < points.length; i++) {
+                            ctx.beginPath();
+                            ctx.lineWidth = 0.01;
+                            ctx.strokeStyle = points[i].colour;
+                            ctx.fill();
+
+                            const pointA = { x: points[i].x, y: points[i].y };
+                            const pointB = { x: Math.floor(Math.random() * canvas.width), y: Math.floor(Math.random() * canvas.height) };
+
+                            const angle = Math.atan2(pointB.y - pointA.y, pointB.x - pointA.x);
+                            const length = canvas.height * 5;
+
+                            const xC = pointA.x + length * Math.cos(angle + Math.PI / 2);
+                            const yC = pointA.y + length * Math.sin(angle + Math.PI / 2);
+
+                            const xD = pointA.x + length * Math.cos(angle - Math.PI / 2);
+                            const yD = pointA.y + length * Math.sin(angle - Math.PI / 2);
+
+                            ctx.beginPath();
+                            ctx.moveTo(xC, yC);
+                            ctx.lineTo(xD, yD);
+                            ctx.stroke();
+                        }
+                    };
+                    img.src = event.target.result;
+                };
+
+                reader.readAsDataURL(file);
+            });
+        </script>
+        <style>
+            body {
+                background-color: black;
+            }
+        </style>
+    </body>
+</html>
